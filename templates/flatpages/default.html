@@ -38,6 +38,15 @@
           <li class="nav-item">
             <a class="nav-link" href="/news/add">Add</a>
           </li>
+          {% if user.is_authenticated %}
+          <li class="nav-item">
+              <a class="nav-link" href="/sign/account/">Profile</a>
+          </li>
+          {% else %}
+          <li class="nav-item">
+              <a class="nav-link" href="/account/login/">Sign Up/In</a>
+          </li>
+          {% endif %}
         </ul>
       </div>
     </div>

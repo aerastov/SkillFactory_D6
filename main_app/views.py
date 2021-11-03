@@ -5,12 +5,14 @@ from django.core.paginator import Paginator
 from .models import Post, Author, Category
 from .filters import PostFilter
 from .forms import PostForm
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+
 
 class NewsList(ListView):
-  model = Post  # указываем модель, объекты которой мы будем выводить
-  template_name = 'news.html'  # указываем имя шаблона, в котором будет лежать HTML, в котором будут все инструкции о том, как именно пользователю должны вывестись наши объекты
-  context_object_name = 'news'  # это имя списка, в котором будут лежать все объекты, его надо указать, чтобы обратиться к самому списку объектов через HTML-шаблон
-  queryset = Post.objects.order_by('-dateCreation') # Сортируем от самой свежей по дате создания
+  model = Post
+  template_name = 'news.html'
+  context_object_name = 'news'
+  queryset = Post.objects.order_by('-dateCreation')
   paginate_by = 10
 
   def get_context_data(self, **kwargs):
@@ -45,12 +47,15 @@ class Search(ListView):
     context['all_posts'] = Post.objects.all() # Для отображения общего кол-ва публикаций на сайте
     return context
 
-class CreatePost(CreateView):
+class CreatePost(PermissionRequiredMixin, CreateView):
+  permission_required = ('main_app.add_post',)
   model = Post
   template_name = 'create_post.html'
   form_class = PostForm
 
-class EditPost(UpdateView):
+
+class EditPost(PermissionRequiredMixin, LoginRequiredMixin, UpdateView):
+  permission_required = ('main_app.change_post',)
   template_name = 'edit_post.html'
   form_class = PostForm
 
@@ -58,14 +63,10 @@ class EditPost(UpdateView):
     id = self.kwargs.get('pk')
     return Post.objects.get(pk=id)
 
-class DeletePost2(DeleteView):
-  model = Post
-  template_name = 'delete_post.html'
-  context_object_name = 'postdelete'
-  queryset = Post.objects.all()
-  success_url = '/../../'
 
 class DeletePost(DeleteView):
   template_name = 'delete_post.html'
   queryset = Post.objects.all()
   success_url = '/news/'
+
+
