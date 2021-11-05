@@ -163,3 +163,10 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 LOGIN_URL = '/account/login/'
 LOGIN_REDIRECT_URL = '/'
+
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_HOST_USER = "newsportal272@gmail.com"
+EMAIL_HOST_PASSWORD = "wetrewteferfggr12312"
+EMAIL_USE_TLS = True
+EMAIL_USE_SSL = False

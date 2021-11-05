@@ -2,11 +2,16 @@ from django.http import HttpResponseRedirect
 from django.views.generic import ListView, DetailView, UpdateView, DeleteView
 from django.views.generic.edit import CreateView
 from django.core.paginator import Paginator
-from .models import Post, Author, Category
+from .models import Post, Author, Category, PostCategory
 from .filters import PostFilter
 from .forms import PostForm
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
-
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import redirect
+from django.core.mail import send_mail
+from django.http import HttpResponse
+from django.contrib.auth.models import User
+from django.contrib.auth.models import Group
 
 class NewsList(ListView):
   model = Post
@@ -70,3 +75,55 @@ class DeletePost(DeleteView):
   success_url = '/news/'
 
 
+@login_required
+def add_subscribe(request, pk):
+    # pk = id новости (например 46)
+    user = request.user
+    category_object = PostCategory.objects.get(postThrough=pk)
+    category_object_name = category_object.categoryThrough
+    # category = Category.objects.get(name=category_object_name)
+    add_subscribe = Category.objects.get(name=category_object_name)
+    add_subscribe.subscribers = user
+    add_subscribe.save()
+    # user.category_set.add(add_subscribe)
+
+
+    Group.objects.get_or_create(name=category_object_name)
+    category_group = Group.objects.get(name=category_object_name)
+    if not request.user.groups.filter(name=category_object_name).exists():
+        category_group.user_set.add(user)
+
+    list_mail = list(User.objects.filter(groups=category_group).values_list('email', flat=True))
+
+    send_mail(
+        subject=f'News Portal: {category_object_name}',
+        message=f'Доброго дня, {request.user}! Вы подписались на уведомления о выходе новых статей в категории {category_object_name}',
+        from_email='newsportal272@gmail.com',
+        recipient_list=list_mail
+    )
+
+    return redirect(request.META.get('HTTP_REFERER'))
+
+
+@login_required
+def del_subscribe(request, pk):
+    category_object = PostCategory.objects.get(postThrough=pk)
+    category_object_name = category_object.categoryThrough
+    del_subscribe = Category.objects.get(name=category_object_name)
+    del_subscribe.subscribers = None
+    del_subscribe.save()
+    user = request.user
+
+    send_mail(
+        subject=f'News Portal: {category_object_name}',
+        message=f'Доброго дня, {request.user}! Вы отменили уведомления о выходе новых статей в категории {category_object_name}. Нам очень жаль, что данная категория Вам не понравилась, ждем Вас снова на нашем портале!',
+        from_email='newsportal272@gmail.com',
+        recipient_list=[user.email, ],
+    )
+    return redirect(request.META.get('HTTP_REFERER'))
+
+
+
+#Логика такая Делаете вью, которая принимает id категории, затем вы получаете объект по категории по id
+# и в поле subscribers вписываете request.user. В шаблоне делаете кнопку подписаться, которая будет
+# также отправлять вьюшке id.
