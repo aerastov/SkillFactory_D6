@@ -42,9 +42,10 @@ INSTALLED_APPS = [
     'bootstrap4',
     'django.contrib.sites',
     'django.contrib.flatpages',
-    'main_app',
+    'main_app.apps.MainAppConfig',
     'sign',
     'django_filters',
+    'django_apscheduler',
 
     'allauth',
     'allauth.account',
@@ -53,7 +54,13 @@ INSTALLED_APPS = [
     'allauth.socialaccount.providers.google',
 ]
 
+EMAIL_HOST_USER = "newsportal272@gmail.com"
+EMAIL_HOST_PASSWORD = "wetrewteferfggr12312"
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 SITE_ID = 1
+
+APSCHEDULER_DATETIME_FORMAT = "N j, Y, f:s a"
+APSCHEDULER_RUN_NOW_TIMEOUT = 25  # Seconds
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -99,7 +106,7 @@ ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_UNIQUE_EMAIL = True
 ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_AUTHENTICATION_METHOD = 'email'
-ACCOUNT_EMAIL_VERIFICATION = 'none'
+ACCOUNT_EMAIL_VERIFICATION = "optional"
 ACCOUNT_FORMS = {'signup': 'sign.forms.BasicSignupForm'}
 
 
@@ -166,7 +173,5 @@ LOGIN_REDIRECT_URL = '/'
 
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
-EMAIL_HOST_USER = "newsportal272@gmail.com"
-EMAIL_HOST_PASSWORD = "wetrewteferfggr12312"
 EMAIL_USE_TLS = True
 EMAIL_USE_SSL = False

@@ -8,10 +8,17 @@ from .forms import PostForm
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect
-from django.core.mail import send_mail
+from django.core.mail import send_mail, mail_managers
 from django.http import HttpResponse
 from django.contrib.auth.models import User
 from django.contrib.auth.models import Group
+from django.template.loader import render_to_string
+from django.core.mail import EmailMultiAlternatives
+# Ниже импорт для сигналов
+from django.db.models.signals import post_save, m2m_changed
+from django.dispatch import receiver, Signal
+
+
 
 class NewsList(ListView):
   model = Post
@@ -24,6 +31,7 @@ class NewsList(ListView):
     context = super().get_context_data(**kwargs)
     context['list_in_page'] = self.paginate_by
     return context
+
 
 class NewsItem(DetailView):
   model = Post
@@ -52,11 +60,28 @@ class Search(ListView):
     context['all_posts'] = Post.objects.all() # Для отображения общего кол-ва публикаций на сайте
     return context
 
+
+
+addpost = Signal(providing_args=['instance', 'category'])
+
 class CreatePost(PermissionRequiredMixin, CreateView):
-  permission_required = ('main_app.add_post',)
-  model = Post
-  template_name = 'create_post.html'
-  form_class = PostForm
+    permission_required = ('main_app.add_post',)
+    model = Post
+    template_name = 'create_post.html'
+    form_class = PostForm
+
+    def form_valid(self, form):
+        post = form.save()
+        id = post.id
+        a = form.cleaned_data['postCategory']
+        category_object_name = a[0]
+        addpost.send(Post, instance=post, category=category_object_name)
+        return redirect(f'/news/{id}')
+
+# При создании записи, в методе post я получаю текущего автора, затем его записи и фильтрую
+# их по дате таким образом чтобы у меня были записи только за последние 24 часа.Если их меньше 3,
+# то выполняю все остальные операции(сохранение записи), если уже 3 то высвечиваю сообщение, мол больше 3
+# нельзя.
 
 
 class EditPost(PermissionRequiredMixin, LoginRequiredMixin, UpdateView):
@@ -82,26 +107,25 @@ def add_subscribe(request, pk):
     category_object = PostCategory.objects.get(postThrough=pk)
     category_object_name = category_object.categoryThrough
     # category = Category.objects.get(name=category_object_name)
+
+    # Делаем запись в поле subscribe модели Category
     add_subscribe = Category.objects.get(name=category_object_name)
     add_subscribe.subscribers = user
     add_subscribe.save()
     # user.category_set.add(add_subscribe)
 
-
+    # Вариант 2. Используем для хранения списка подписавшихся пользователей встроенные в auth.models группы
     Group.objects.get_or_create(name=category_object_name)
     category_group = Group.objects.get(name=category_object_name)
     if not request.user.groups.filter(name=category_object_name).exists():
         category_group.user_set.add(user)
 
-    list_mail = list(User.objects.filter(groups=category_group).values_list('email', flat=True))
-
     send_mail(
         subject=f'News Portal: {category_object_name}',
         message=f'Доброго дня, {request.user}! Вы подписались на уведомления о выходе новых статей в категории {category_object_name}',
         from_email='newsportal272@gmail.com',
-        recipient_list=list_mail
+        recipient_list=[user.email, ],
     )
-
     return redirect(request.META.get('HTTP_REFERER'))
 
 
@@ -114,6 +138,10 @@ def del_subscribe(request, pk):
     del_subscribe.save()
     user = request.user
 
+    # Вариант 2. Используем для хранения списка подписавшихся пользователей встроенные в auth.models группы
+    category_group = Group.objects.get(name=category_object_name)
+    category_group.user_set.remove(user)
+
     send_mail(
         subject=f'News Portal: {category_object_name}',
         message=f'Доброго дня, {request.user}! Вы отменили уведомления о выходе новых статей в категории {category_object_name}. Нам очень жаль, что данная категория Вам не понравилась, ждем Вас снова на нашем портале!',
@@ -122,8 +150,3 @@ def del_subscribe(request, pk):
     )
     return redirect(request.META.get('HTTP_REFERER'))
 
-
-
-#Логика такая Делаете вью, которая принимает id категории, затем вы получаете объект по категории по id
-# и в поле subscribers вписываете request.user. В шаблоне делаете кнопку подписаться, которая будет
-# также отправлять вьюшке id.

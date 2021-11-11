@@ -55,8 +55,14 @@ class Post(models.Model):
         self.rating -= 1
         self.save()
 
+    def post_id(self):
+        return self.id
+
     def category(self):
-        return {self.postCategory.pk}
+        category_object = PostCategory.objects.get(postThrough=self.id)
+        category_object_name = category_object.categoryThrough
+        category = Category.objects.get(name=category_object_name)
+        return category
 
     def get_absolute_url(self):  # добавим абсолютный путь, чтобы после создания нас перебрасывало на страницу с товаром
         return f'/news/{self.id}'

@@ -20,20 +20,26 @@ News
         <span>Категория: </span>
 <!--{{ news_item.postCategory}}-->
         {% for category in news_item.postCategory.all %}
-            <span>{{ category.name}} </span>
+            <span>{{ category.name }} </span>
         {% endfor %}
         </br>
 
 <!--    <a href="{{ request.get_full_path }}/add_subscribe" class="btn btn-primary float-center">Подписаться на данную категорию</a>-->
-   <button> <a href="{{ request.get_full_path }}/add_subscribe"> Подписаться</a> </button>
-   <button> <a href="{{ request.get_full_path }}/del_subscribe"> Отменить подписку</a> </button>
 
-        </br>
-        <span>Подписчики: </span>
-        {{ news_item.postCategory.subscribers}}</br>
-        {% for category in news_item.postCategory.all %}
-            <span>{{ category.subscribers}} </span>
-        {% endfor %}
+{% if user.is_authenticated %}
+    {% if not request.user|has_group:news_item.category %}
+        <button> <a href="{{ request.get_full_path }}/add_subscribe"> Подписаться</a> </button>
+    {% else %}
+        <button> <a style="color: red" href="{{ request.get_full_path }}/del_subscribe"> Отменить подписку</a> </button>
+    {% endif %}
+{% endif %}
+
+<!--        </br>-->
+<!--        <span>Подписчики: </span>-->
+<!--        {{ news_item.postCategory.subscribers}}</br>-->
+<!--        {% for category in news_item.postCategory.all %}-->
+<!--            <span>{{ category.subscribers}} </span>-->
+<!--        {% endfor %}-->
 
 
         </br></br>

@@ -19,6 +19,14 @@
     <button> <a href="/sign/add_authors/"> Стать автором</a> </button>
     {% endif %}
 
+    </br><span style="font-size:20px">Оформленные подписки:</span>
+    {% for category in user.groups.all %}
+        {% if not 'common' in category.name and not 'authors' in category.name %}
+            <span> {{ category.name }} |</span>
+        {% endif %}
+    {% endfor %}
+
+
     </br> </br>
     <a class="btn btn-secondary" href="/sign/edit/" role="button">Изменить даные</a>
     </br></br>

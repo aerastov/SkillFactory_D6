@@ -12,3 +12,7 @@ def censor(value):
         value = value.replace(b, "&#129324;")
         value = value.replace(с, "&#129324;")
     return value
+
+@register.filter(name='has_group')
+def has_group(user, group_name):
+    return user.groups.filter(name=group_name).exists()
