@@ -61,7 +61,6 @@ class Search(ListView):
     return context
 
 
-
 addpost = Signal(providing_args=['instance', 'category'])
 
 class CreatePost(PermissionRequiredMixin, CreateView):
@@ -77,11 +76,6 @@ class CreatePost(PermissionRequiredMixin, CreateView):
         category_object_name = a[0]
         addpost.send(Post, instance=post, category=category_object_name)
         return redirect(f'/news/{id}')
-
-# При создании записи, в методе post я получаю текущего автора, затем его записи и фильтрую
-# их по дате таким образом чтобы у меня были записи только за последние 24 часа.Если их меньше 3,
-# то выполняю все остальные операции(сохранение записи), если уже 3 то высвечиваю сообщение, мол больше 3
-# нельзя.
 
 
 class EditPost(PermissionRequiredMixin, LoginRequiredMixin, UpdateView):
